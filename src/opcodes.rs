@@ -1,6 +1,6 @@
 use crate::cpu::AddressingMode;
-use std::collections::HashMap;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 pub struct OpCode {
     pub code: u8,
@@ -13,11 +13,11 @@ pub struct OpCode {
 impl OpCode {
     fn new(code: u8, mnemonic: &'static str, len: u8, cycles: u8, mode: AddressingMode) -> Self {
         OpCode {
-            code: code,
-            mnemonic: mnemonic,
-            len: len,
-            cycles: cycles,
-            mode: mode,
+            code,
+            mnemonic,
+            len,
+            cycles,
+            mode,
         }
     }
 }
@@ -25,8 +25,14 @@ impl OpCode {
 lazy_static! {
     pub static ref CPU_OPS_CODES: Vec<OpCode> = vec![
         OpCode::new(0x00, "BRK", 1, 7, AddressingMode::NoneAddressing),
-        OpCode::new(0xaa, "TAX", 1, 2, AddressingMode::NoneAddressing),
-        OpCode::new(0xe8, "INX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xAA, "TAX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xA8, "TAY", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x8A, "TXA", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x98, "TYA", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xE8, "INX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xC8, "INY", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0xCA, "DEX", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x88, "DEY", 1, 2, AddressingMode::NoneAddressing),
 
         OpCode::new(0xa9, "LDA", 2, 2, AddressingMode::Immediate),
         OpCode::new(0xa5, "LDA", 2, 3, AddressingMode::ZeroPage),

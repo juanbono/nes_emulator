@@ -2,7 +2,7 @@
 // 1. Memory Map
 // 2. CPU Registers
 use crate::opcodes;
-use std::{collections::HashMap, ops::Add};
+use std::collections::HashMap;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
@@ -104,7 +104,7 @@ impl CPU {
     }
 
     pub fn run(&mut self) {
-        let ref opcodes: HashMap<u8, &'static opcodes::OpCode> = *opcodes::OPCODES_MAP;
+        let opcodes: &HashMap<u8, &'static opcodes::OpCode> = &(*opcodes::OPCODES_MAP);
 
         loop {
             let code = self.mem_read(self.program_counter);
@@ -125,13 +125,23 @@ impl CPU {
                     self.sta(&opcode.mode);
                 }
                 /* AND */
-                0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => {
-                    self.and(&opcode.mode)
-                }
+                0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => self.and(&opcode.mode),
                 /* TAX */
                 0xAA => self.tax(),
+                /* TAY */
+                0xA8 => self.tay(),
+                /* TXA */
+                0x8A => self.txa(),
+                /* TYA */
+                0x98 => self.tya(),
                 /* INX */
                 0xe8 => self.inx(),
+                /* INY */
+                0xC8 => self.iny(),
+                /* DEX */
+                0xCA => self.dex(),
+                /* DEY */
+                0x88 => self.dey(),
                 /* BRK */
                 0x00 => return,
                 _ => todo!(),
@@ -174,6 +184,9 @@ impl CPU {
         self.mem_write_u16(0xFFFC, 0x8000);
     }
 
+    ////////////////
+    // Instructions
+    ////////////////
     fn lda(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
         let value = self.mem_read(addr);
@@ -187,9 +200,39 @@ impl CPU {
         self.update_zero_and_negative_flags(self.register_a);
     }
 
+    fn tay(&mut self) {
+        self.register_y = self.register_a;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    fn txa(&mut self) {
+        self.register_a = self.register_x;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    fn tya(&mut self) {
+        self.register_a = self.register_y;
+        self.update_zero_and_negative_flags(self.register_y);
+    }
+
     fn inx(&mut self) {
         self.register_x = self.register_x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.register_x)
+    }
+
+    fn iny(&mut self) {
+        self.register_y = self.register_y.wrapping_add(1);
+        self.update_zero_and_negative_flags(self.register_y)
+    }
+
+    fn dex(&mut self) {
+        self.register_x = self.register_x.wrapping_sub(1);
+        self.update_zero_and_negative_flags(self.register_x)
+    }
+
+    fn dey(&mut self) {
+        self.register_y = self.register_y.wrapping_sub(1);
+        self.update_zero_and_negative_flags(self.register_y)
     }
 
     fn sta(&mut self, mode: &AddressingMode) {
@@ -256,10 +299,25 @@ mod test {
     #[test]
     fn test_inx_overflow() {
         let mut cpu = CPU::new();
-        cpu.register_x = 0xff;
-        cpu.load_and_run(vec![0xA9, 0xFF, 0xAA, 0xE8, 0xE8, 0x00]);
+        // the following program adds 0xFF to the register A then
+        // moves the contents of register A to register X and then
+        // increments by 1 two times the register X (leading to an overflow).
+        let program = vec![0xA9, 0xFF, 0xAA, 0xE8, 0xE8, 0x00];
+        cpu.load_and_run(program);
 
         assert_eq!(cpu.register_x, 1)
+    }
+
+    #[test]
+    fn test_iny_overflow() {
+        let mut cpu = CPU::new();
+        // the following program adds 0xFF to the register A then
+        // moves the contents of register A to register Y and then
+        // increments by 1 two times the register Y (leading to an overflow).
+        let program = vec![0xA9, 0xFF, 0xA8, 0xC8, 0xC8, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(cpu.register_y, 1)
     }
 
     #[test]
@@ -283,7 +341,7 @@ mod test {
     #[test]
     fn test_immediate_add_operation() {
         let mut cpu = CPU::new();
-        // the program loads 0b0000_0011 into the register A then 
+        // the program loads 0b0000_0011 into the register A then
         // perform an AND with 0b0000_1111.
         let program = vec![0xa9, 0b0000_0011, 0x29, 0b0000_1111, 0x00];
         cpu.load_and_run(program);
