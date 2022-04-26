@@ -265,32 +265,39 @@ impl CPU {
         self.update_zero_and_negative_flags(self.register_a);
     }
 
-    fn clc(&self) {
-        todo!()
+    /// clear carry flag
+    fn clc(&mut self) {
+        self.status &= !FlagSet::from(StatusFlag::Carry);
     }
 
-    fn sec(&self) {
-        todo!()
+    /// set carry flag
+    fn sec(&mut self) {
+        self.status |= StatusFlag::Carry;
     }
 
-    fn cli(&self) {
-        todo!()
+    /// clear interrupt flag
+    fn cli(&mut self) {
+        self.status &= !FlagSet::from(StatusFlag::InterruptDisable);
     }
 
-    fn sei(&self) {
-        todo!()
+    /// set interrupt flag
+    fn sei(&mut self) {
+        self.status |= StatusFlag::InterruptDisable;
     }
 
-    fn clv(&self) {
-        todo!()
+    /// clear overflow flag
+    fn clv(&mut self) {
+        self.status &= !FlagSet::from(StatusFlag::Overflow);
     }
 
-    fn cld(&self) {
-        todo!()
+    /// clear decimal mode flag
+    fn cld(&mut self) {
+        self.status &= !FlagSet::from(StatusFlag::DecimalMode);
     }
 
-    fn sed(&self) {
-        todo!()
+    /// set decimal mode flag
+    fn sed(&mut self) {
+        self.status |= StatusFlag::DecimalMode;
     }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
