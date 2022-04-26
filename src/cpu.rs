@@ -413,4 +413,63 @@ mod test {
 
         assert_eq!(0b0000_0011 & 0b0000_1111, cpu.register_a);
     }
+
+    #[test]
+    fn test_clc_clears_carry_flag() {
+        let mut cpu = CPU::new();
+        let program = vec![0x38, 0x18, 0x00];
+        cpu.load_and_run(program);
+
+        assert!(!cpu.status.contains(StatusFlag::Carry));
+    }
+
+    #[test]
+    fn test_sec_sets_carry_flag() {
+        let mut cpu = CPU::new();
+        let program = vec![0x38, 0x00];
+        cpu.load_and_run(program);
+
+        assert!(cpu.status.contains(StatusFlag::Carry));
+    }
+
+    #[test]
+    fn test_cli_clears_interrupt_flag() {
+        let mut cpu = CPU::new();
+        let program = vec![0x78, 0x58, 0x00];
+        cpu.load_and_run(program);
+
+        assert!(!cpu.status.contains(StatusFlag::InterruptDisable));
+    }
+
+    #[test]
+    fn test_sei_sets_interrupt_flag() {
+        let mut cpu = CPU::new();
+        let program = vec![0x78, 0x00];
+        cpu.load_and_run(program);
+
+        assert!(cpu.status.contains(StatusFlag::InterruptDisable));
+    }
+
+    #[test]
+    fn test_clv_clears_overflow_flag() {
+        todo!()
+    }
+
+    #[test]
+    fn test_cld_clears_decimal_mode_flag() {
+        let mut cpu = CPU::new();
+        let program = vec![0xF8, 0xD8, 0x00];
+        cpu.load_and_run(program);
+
+        assert!(!cpu.status.contains(StatusFlag::DecimalMode));
+    }
+
+    #[test]
+    fn test_sed_sets_decimal_mode_flag() {
+        let mut cpu = CPU::new();
+        let program = vec![0xF8, 0x00];
+        cpu.load_and_run(program);
+
+        assert!(cpu.status.contains(StatusFlag::DecimalMode));
+    }
 }
