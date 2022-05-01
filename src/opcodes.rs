@@ -22,6 +22,7 @@ impl OpCode {
     }
 }
 
+// Reference: http://www.6502.org/tutorials/6502opcodes.html
 lazy_static! {
     pub static ref CPU_OPS_CODES: Vec<OpCode> = vec![
         // Break instruction
@@ -73,10 +74,12 @@ lazy_static! {
         OpCode::new(0xD9, "CMP", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), //todo
         OpCode::new(0xC1, "CMP", 2, 6, AddressingMode::Indirect_X), //todo
         OpCode::new(0xD1, "CMP", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), //todo
+
         // Compare X register
         OpCode::new(0xE0, "CPX", 2, 2, AddressingMode::Immediate), //todo
         OpCode::new(0xE4, "CPX", 2, 3, AddressingMode::ZeroPage), //todo
         OpCode::new(0xEC, "CPX", 3, 4, AddressingMode::Absolute), //todo
+
         // Compare Y register
         OpCode::new(0xC0, "CPY", 2, 2, AddressingMode::Immediate), //todo
         OpCode::new(0xC4, "CPY", 2, 3, AddressingMode::ZeroPage), //todo
@@ -106,6 +109,7 @@ lazy_static! {
         OpCode::new(0xAC, "LDY", 3, 4, AddressingMode::Absolute), //todo
         OpCode::new(0xBC, "LDY", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), //todo
 
+        // Store accumulator
         OpCode::new(0x85, "STA", 2, 3, AddressingMode::ZeroPage),
         OpCode::new(0x95, "STA", 2, 4, AddressingMode::ZeroPage_X),
         OpCode::new(0x8d, "STA", 3, 4, AddressingMode::Absolute),
@@ -114,6 +118,17 @@ lazy_static! {
         OpCode::new(0x81, "STA", 2, 6, AddressingMode::Indirect_X),
         OpCode::new(0x91, "STA", 2, 6, AddressingMode::Indirect_Y),
 
+        // Store register X
+        OpCode::new(0x85, "STX", 2, 3, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x95, "STX", 2, 4, AddressingMode::ZeroPage_Y), // todo
+        OpCode::new(0x8d, "STX", 3, 4, AddressingMode::Absolute), // todo
+
+        // Store register Y
+        OpCode::new(0x85, "STY", 2, 3, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x95, "STY", 2, 4, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0x8d, "STY", 3, 4, AddressingMode::Absolute), // todo
+
+        // Bitwise AND
         OpCode::new(0x29, "AND", 2, 2, AddressingMode::Immediate),
         OpCode::new(0x25, "AND", 2, 3, AddressingMode::ZeroPage),
         OpCode::new(0x35, "AND", 2, 4, AddressingMode::ZeroPage_X),
@@ -122,6 +137,95 @@ lazy_static! {
         OpCode::new(0x39, "AND", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y),
         OpCode::new(0x21, "AND", 2, 6, AddressingMode::Indirect_X),
         OpCode::new(0x31, "AND", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y),
+
+        // Bitwise Exclusive OR
+        OpCode::new(0x49, "EOR", 2, 2, AddressingMode::Immediate), //todo
+        OpCode::new(0x45, "EOR", 2, 3, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x55, "EOR", 2, 4, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0x4D, "EOR", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x5D, "EOR", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), // todo
+        OpCode::new(0x59, "EOR", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), // todo
+        OpCode::new(0x41, "EOR", 2, 6, AddressingMode::Indirect_X), // todo
+        OpCode::new(0x51, "EOR", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), // todo
+
+        // Bitwise OR with accumulator
+        OpCode::new(0x09, "ORA", 2, 2, AddressingMode::Immediate), //todo
+        OpCode::new(0x05, "ORA", 2, 3, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x15, "ORA", 2, 4, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0x0D, "ORA", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x1D, "ORA", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), // todo
+        OpCode::new(0x19, "ORA", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), // todo
+        OpCode::new(0x01, "ORA", 2, 6, AddressingMode::Indirect_X), // todo
+        OpCode::new(0x11, "ORA", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), // todo
+
+        // No Operation
+        OpCode::new(0xEA, "NOT", 1, 2, AddressingMode::NoneAddressing), // todo
+
+        // test BITs
+        OpCode::new(0x24, "BIT", 2, 2, AddressingMode::ZeroPage), //todo
+        OpCode::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute), // todo
+
+        // Logical shift right
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
+        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
+        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
+
+        // Arithmetic shift left
+        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
+
+        // Rotate left
+        OpCode::new(0x2A, "ROL", 1, 2, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x26, "ROL", 2, 5, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x36, "ROL", 2, 6, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0x2E, "ROL", 3, 6, AddressingMode::Absolute), // todo
+        OpCode::new(0x3E, "ROL", 3, 7, AddressingMode::Absolute_X), // todo
+
+        // Rotate right
+        OpCode::new(0x6A, "ROR", 1, 2, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x66, "ROR", 2, 5, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x76, "ROR", 2, 6, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0x6E, "ROR", 3, 6, AddressingMode::Absolute), // todo
+        OpCode::new(0x7E, "ROR", 3, 7, AddressingMode::Absolute_X), // todo
+
+        // Return from interrupt
+        OpCode::new(0x40, "RTI", 1, 6, AddressingMode::NoneAddressing), // todo
+
+        // Return from subroutine
+        OpCode::new(0x60, "RTS", 1, 6, AddressingMode::NoneAddressing), // todo
+
+        // Add with carry
+        OpCode::new(0x69, "ADC", 2, 2, AddressingMode::Immediate), // todo
+        OpCode::new(0x65, "ADC", 2, 3, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x75, "ADC", 2, 4, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0x6D, "ADC", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x7D, "ADC", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), // todo
+        OpCode::new(0x79, "ADC", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), // todo
+        OpCode::new(0x61, "ADC", 2, 6, AddressingMode::Indirect_X), // todo
+        OpCode::new(0x71, "ADC", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), // todo
+
+        // Subtract with carry
+        OpCode::new(0xE9, "SBC", 2, 2, AddressingMode::Immediate), // todo
+        OpCode::new(0xE5, "SBC", 2, 3, AddressingMode::ZeroPage), // todo
+        OpCode::new(0xF5, "SBC", 2, 4, AddressingMode::ZeroPage_X), // todo
+        OpCode::new(0xED, "SBC", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0xFD, "SBC", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), // todo
+        OpCode::new(0xF9, "SBC", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), // todo
+        OpCode::new(0xE1, "SBC", 2, 6, AddressingMode::Indirect_X), // todo
+        OpCode::new(0xF1, "SBC", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), // todo
+
+        // Stack instructions
+        OpCode::new(0x9A, "TXS", 1, 2, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0xBA, "TSX", 1, 2, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x48, "PHA", 1, 3, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x68, "PLA", 1, 4, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x08, "PHP", 1, 3, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x28, "PLP", 1, 4, AddressingMode::NoneAddressing), // todo
     ];
 
     pub static ref OPCODES_MAP: HashMap<u8, &'static OpCode> = {
