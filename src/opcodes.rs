@@ -125,7 +125,7 @@ lazy_static! {
 
         // Store register Y
         OpCode::new(0x84, "STY", 2, 3, AddressingMode::ZeroPage),
-        OpCode::new(0x94, "STY", 2, 4, AddressingMode::ZeroPage_X), 
+        OpCode::new(0x94, "STY", 2, 4, AddressingMode::ZeroPage_X),
         OpCode::new(0x8C, "STY", 3, 4, AddressingMode::Absolute),
 
         // Bitwise AND
@@ -139,27 +139,27 @@ lazy_static! {
         OpCode::new(0x31, "AND", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y),
 
         // Bitwise Exclusive OR
-        OpCode::new(0x49, "EOR", 2, 2, AddressingMode::Immediate), //todo
-        OpCode::new(0x45, "EOR", 2, 3, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x55, "EOR", 2, 4, AddressingMode::ZeroPage_X), // todo
-        OpCode::new(0x4D, "EOR", 3, 4, AddressingMode::Absolute), // todo
-        OpCode::new(0x5D, "EOR", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), // todo
-        OpCode::new(0x59, "EOR", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), // todo
-        OpCode::new(0x41, "EOR", 2, 6, AddressingMode::Indirect_X), // todo
-        OpCode::new(0x51, "EOR", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), // todo
+        OpCode::new(0x49, "EOR", 2, 2, AddressingMode::Immediate),
+        OpCode::new(0x45, "EOR", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0x55, "EOR", 2, 4, AddressingMode::ZeroPage_X),
+        OpCode::new(0x4D, "EOR", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x5D, "EOR", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X),
+        OpCode::new(0x59, "EOR", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y),
+        OpCode::new(0x41, "EOR", 2, 6, AddressingMode::Indirect_X),
+        OpCode::new(0x51, "EOR", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y),
 
         // Bitwise OR with accumulator
-        OpCode::new(0x09, "ORA", 2, 2, AddressingMode::Immediate), //todo
-        OpCode::new(0x05, "ORA", 2, 3, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x15, "ORA", 2, 4, AddressingMode::ZeroPage_X), // todo
-        OpCode::new(0x0D, "ORA", 3, 4, AddressingMode::Absolute), // todo
-        OpCode::new(0x1D, "ORA", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), // todo
-        OpCode::new(0x19, "ORA", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), // todo
-        OpCode::new(0x01, "ORA", 2, 6, AddressingMode::Indirect_X), // todo
-        OpCode::new(0x11, "ORA", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y), // todo
+        OpCode::new(0x09, "ORA", 2, 2, AddressingMode::Immediate),
+        OpCode::new(0x05, "ORA", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0x15, "ORA", 2, 4, AddressingMode::ZeroPage_X),
+        OpCode::new(0x0D, "ORA", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x1D, "ORA", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X),
+        OpCode::new(0x19, "ORA", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y),
+        OpCode::new(0x01, "ORA", 2, 6, AddressingMode::Indirect_X),
+        OpCode::new(0x11, "ORA", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y),
 
         // No Operation
-        OpCode::new(0xEA, "NOT", 1, 2, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0xEA, "NOT", 1, 2, AddressingMode::NoneAddressing),
 
         // test BITs
         OpCode::new(0x24, "BIT", 2, 2, AddressingMode::ZeroPage), //todo

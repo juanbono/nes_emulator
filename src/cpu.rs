@@ -145,6 +145,14 @@ impl CPU {
                 }
                 /* AND */
                 0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => self.and(&opcode.mode),
+                /* EOR */
+                0x49 | 0x45 | 0x55 | 0x4D | 0x5D | 0x59 | 0x41 | 0x51 => {
+                    self.eor(&opcode.mode);
+                }
+                /* ORA */
+                0x09 | 0x05 | 0x15 | 0x0D | 0x1D | 0x19 | 0x01 | 0x11 => {
+                    self.ora(&opcode.mode);
+                }
                 /* TAX */
                 0xAA => self.tax(),
                 /* TAY */
@@ -182,6 +190,10 @@ impl CPU {
                 /* DEC */
                 0xC6 | 0xD6 | 0xCE | 0xDE => {
                     self.dec(&opcode.mode);
+                }
+                /* NOP */
+                0xEA => {
+                    // No OP
                 }
                 /* BRK */
                 0x00 => return,
@@ -310,11 +322,30 @@ impl CPU {
         self.mem_write(addr, self.register_y);
     }
 
+    /// Bitwise AND with Accumulator
     fn and(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
         let value = self.mem_read(addr);
 
         self.register_a &= value;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    /// Bitwise Exclusive OR
+    fn eor(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+
+        self.register_a ^= value;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    /// Bitwise OR with Accumulator
+    fn ora(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+
+        self.register_a |= value;
         self.update_zero_and_negative_flags(self.register_a);
     }
 
@@ -531,14 +562,36 @@ mod test {
     }
 
     #[test]
-    fn test_immediate_add_operation() {
+    fn test_immediate_and_operation() {
         let mut cpu = CPU::new();
         // the program loads 0b0000_0011 into the register A then
         // perform an AND with 0b0000_1111.
-        let program = vec![0xa9, 0b0000_0011, 0x29, 0b0000_1111, 0x00];
+        let program = vec![0xA9, 0b0000_0011, 0x29, 0b0000_1111, 0x00];
         cpu.load_and_run(program);
 
         assert_eq!(0b0000_0011 & 0b0000_1111, cpu.register_a);
+    }
+
+    #[test]
+    fn test_immediate_eor_operation() {
+        let mut cpu = CPU::new();
+        // the program loads 0b0000_0011 into the register A then
+        // perform an Exclusive OR with 0b0000_1111.
+        let program = vec![0xA9, 0b0000_0011, 0x49, 0b0000_1111, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(0b0000_0011 ^ 0b0000_1111, cpu.register_a);
+    }
+
+    #[test]
+    fn test_immediate_ora_operation() {
+        let mut cpu = CPU::new();
+        // the program loads 0b0000_0011 into the register A then
+        // perform an OR with 0b0000_1111.
+        let program = vec![0xA9, 0b0000_0011, 0x09, 0b0000_1111, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(0b0000_0011 | 0b0000_1111, cpu.register_a);
     }
 
     #[test]
