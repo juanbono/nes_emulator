@@ -167,6 +167,14 @@ impl CPU {
                 0xD8 => self.cld(),
                 /* SED */
                 0xF8 => self.sed(),
+                /* INC */
+                0xE6 | 0xF6 | 0xEE | 0xFE => {
+                    self.inc(&opcode.mode);
+                }
+                /* DEC */
+                0xC6 | 0xD6 | 0xCE | 0xDE => {
+                    self.dec(&opcode.mode);
+                }
                 /* BRK */
                 0x00 => return,
                 _ => todo!(),
@@ -322,6 +330,24 @@ impl CPU {
     /// set decimal mode flag
     fn sed(&mut self) {
         self.status |= StatusFlag::DecimalMode;
+    }
+
+    /// Increment memory
+    fn inc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+        data = data.wrapping_add(1);
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+    }
+
+    /// Decrement memory
+    fn dec(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+        data = data.wrapping_sub(1);
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
     }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
@@ -551,5 +577,35 @@ mod test {
         cpu.load_and_run(program);
 
         assert!(cpu.status.contains(StatusFlag::DecimalMode));
+    }
+
+    #[test]
+    fn test_inc_can_increment_memory_by_1() {
+        let mut cpu = CPU::new();
+        let addr = 0x10;
+        let data = 0x01;
+        cpu.mem_write(addr, data);
+        // The program increments by 1 the memory at pc + 0x10.
+        // That piece of memory was set to 0x01 beforehand so
+        // it should be 0x02 after the execution.
+        let program = vec![0xF6, addr as u8, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(data.wrapping_add(1), cpu.mem_read(addr));
+    }
+
+    #[test]
+    fn test_dec_can_decrement_memory_by_1() {
+        let mut cpu = CPU::new();
+        let addr = 0x10;
+        let data = 0x01;
+        cpu.mem_write(addr, data);
+        // The program decrements by 1 the memory at pc + 0x10.
+        // That piece of memory was set to 0x01 beforehand so
+        // it should be 0x00 after the execution.
+        let program = vec![0xD6, addr as u8, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(data.wrapping_sub(1), cpu.mem_read(addr));
     }
 }

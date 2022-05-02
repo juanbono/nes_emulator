@@ -54,16 +54,16 @@ lazy_static! {
         OpCode::new(0x20, "JSR", 3, 6, AddressingMode::Absolute), // todo
 
         // Increment memory
-        OpCode::new(0xE6, "INC", 2, 5, AddressingMode::ZeroPage), //todo
-        OpCode::new(0xF6, "INC", 2, 6, AddressingMode::ZeroPage_X), //todo
-        OpCode::new(0xEE, "INC", 3, 6, AddressingMode::Absolute), // todo
-        OpCode::new(0xFE, "INC", 3, 7, AddressingMode::Absolute_X), //todo
+        OpCode::new(0xE6, "INC", 2, 5, AddressingMode::ZeroPage),
+        OpCode::new(0xF6, "INC", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode::new(0xEE, "INC", 3, 6, AddressingMode::Absolute),
+        OpCode::new(0xFE, "INC", 3, 7, AddressingMode::Absolute_X),
 
         // Decrement memory
-        OpCode::new(0xC6, "DEC", 2, 5, AddressingMode::ZeroPage), //todo
-        OpCode::new(0xD6, "DEC", 2, 6, AddressingMode::ZeroPage_X), //todo
-        OpCode::new(0xCE, "DEC", 3, 6, AddressingMode::Absolute), //todo
-        OpCode::new(0xDE, "DEC", 3, 7, AddressingMode::Absolute_X), //todo
+        OpCode::new(0xC6, "DEC", 2, 5, AddressingMode::ZeroPage),
+        OpCode::new(0xD6, "DEC", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode::new(0xCE, "DEC", 3, 6, AddressingMode::Absolute),
+        OpCode::new(0xDE, "DEC", 3, 7, AddressingMode::Absolute_X),
 
         // Compare accumulator
         OpCode::new(0xC9, "CMP", 2, 2, AddressingMode::Immediate), //todo
@@ -96,18 +96,18 @@ lazy_static! {
         OpCode::new(0xB1, "LDA", 2, 5/*+1 if page crossed*/, AddressingMode::Indirect_Y),
 
         // Load register X
-        OpCode::new(0xA2, "LDX", 2, 2, AddressingMode::Immediate), //todo
-        OpCode::new(0xA6, "LDX", 2, 3, AddressingMode::ZeroPage), //todo
-        OpCode::new(0xB6, "LDX", 2, 4, AddressingMode::ZeroPage_Y), //todo
-        OpCode::new(0xAE, "LDX", 3, 4, AddressingMode::Absolute), //todo
-        OpCode::new(0xBE, "LDX", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y), //todo
+        OpCode::new(0xA2, "LDX", 2, 2, AddressingMode::Immediate),
+        OpCode::new(0xA6, "LDX", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0xB6, "LDX", 2, 4, AddressingMode::ZeroPage_Y),
+        OpCode::new(0xAE, "LDX", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0xBE, "LDX", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_Y),
 
         // Load register X
-        OpCode::new(0xA0, "LDY", 2, 2, AddressingMode::Immediate), //todo
-        OpCode::new(0xA4, "LDY", 2, 3, AddressingMode::ZeroPage), //todo
-        OpCode::new(0xB4, "LDY", 2, 4, AddressingMode::ZeroPage_X), //todo
-        OpCode::new(0xAC, "LDY", 3, 4, AddressingMode::Absolute), //todo
-        OpCode::new(0xBC, "LDY", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X), //todo
+        OpCode::new(0xA0, "LDY", 2, 2, AddressingMode::Immediate),
+        OpCode::new(0xA4, "LDY", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0xB4, "LDY", 2, 4, AddressingMode::ZeroPage_X),
+        OpCode::new(0xAC, "LDY", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0xBC, "LDY", 3, 4/*+1 if page crossed*/, AddressingMode::Absolute_X),
 
         // Store accumulator
         OpCode::new(0x85, "STA", 2, 3, AddressingMode::ZeroPage),
