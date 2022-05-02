@@ -123,6 +123,14 @@ impl CPU {
                 0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
                     self.lda(&opcode.mode);
                 }
+                /* LDX */
+                0xA2 | 0xA6 | 0xB6 | 0xAE | 0xBE => {
+                    self.ldx(&opcode.mode);
+                }
+                /* LDY */
+                0xA0 | 0xA4 | 0xB4 | 0xAC | 0xBC => {
+                    self.ldy(&opcode.mode);
+                }
                 /* STA */
                 0x85 | 0x95 | 0x8d | 0x9d | 0x99 | 0x81 | 0x91 => {
                     self.sta(&opcode.mode);
@@ -210,6 +218,22 @@ impl CPU {
 
         self.register_a = value;
         self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    fn ldx(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+
+        self.register_x = value;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    fn ldy(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+
+        self.register_y = value;
+        self.update_zero_and_negative_flags(self.register_y);
     }
 
     fn tax(&mut self) {
@@ -345,9 +369,45 @@ mod test {
     }
 
     #[test]
-    fn test_0xa9_lda_zero_flag() {
+    fn test_ldx_immediate_load_data() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xA2, 0x05, 0x00]);
+
+        assert_eq!(cpu.register_x, 0x05);
+        assert!(!cpu.status.contains(StatusFlag::Zero));
+        assert!(!cpu.status.contains(StatusFlag::Negative));
+    }
+
+    #[test]
+    fn test_ldy_immediate_load_data() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xA0, 0x05, 0x00]);
+
+        assert_eq!(cpu.register_y, 0x05);
+        assert!(!cpu.status.contains(StatusFlag::Zero));
+        assert!(!cpu.status.contains(StatusFlag::Negative));
+    }
+
+    #[test]
+    fn test_immediate_lda_zero_flag() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0x00, 0x00]);
+
+        assert!(cpu.status.contains(StatusFlag::Zero));
+    }
+
+    #[test]
+    fn test_immediate_ldx_zero_flag() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xA2, 0x00, 0x00]);
+
+        assert!(cpu.status.contains(StatusFlag::Zero));
+    }
+
+    #[test]
+    fn test_immediate_ldy_zero_flag() {
+        let mut cpu = CPU::new();
+        cpu.load_and_run(vec![0xA0, 0x00, 0x00]);
 
         assert!(cpu.status.contains(StatusFlag::Zero));
     }
@@ -401,6 +461,26 @@ mod test {
         cpu.load_and_run(vec![0xa5, 0x10, 0x00]);
 
         assert_eq!(cpu.register_a, 0x55);
+    }
+
+    #[test]
+    fn test_ldx_from_memory() {
+        let mut cpu = CPU::new();
+        cpu.mem_write(0x10, 0x55);
+
+        cpu.load_and_run(vec![0xA6, 0x10, 0x00]);
+
+        assert_eq!(cpu.register_x, 0x55);
+    }
+
+    #[test]
+    fn test_ldy_from_memory() {
+        let mut cpu = CPU::new();
+        cpu.mem_write(0x10, 0x55);
+
+        cpu.load_and_run(vec![0xA4, 0x10, 0x00]);
+
+        assert_eq!(cpu.register_y, 0x55);
     }
 
     #[test]
