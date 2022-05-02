@@ -119,14 +119,14 @@ lazy_static! {
         OpCode::new(0x91, "STA", 2, 6, AddressingMode::Indirect_Y),
 
         // Store register X
-        OpCode::new(0x85, "STX", 2, 3, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x95, "STX", 2, 4, AddressingMode::ZeroPage_Y), // todo
-        OpCode::new(0x8d, "STX", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x86, "STX", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0x96, "STX", 2, 4, AddressingMode::ZeroPage_Y),
+        OpCode::new(0x8E, "STX", 3, 4, AddressingMode::Absolute),
 
         // Store register Y
-        OpCode::new(0x85, "STY", 2, 3, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x95, "STY", 2, 4, AddressingMode::ZeroPage_X), // todo
-        OpCode::new(0x8d, "STY", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x84, "STY", 2, 3, AddressingMode::ZeroPage),
+        OpCode::new(0x94, "STY", 2, 4, AddressingMode::ZeroPage_X), 
+        OpCode::new(0x8C, "STY", 3, 4, AddressingMode::Absolute),
 
         // Bitwise AND
         OpCode::new(0x29, "AND", 2, 2, AddressingMode::Immediate),

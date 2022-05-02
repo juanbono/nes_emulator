@@ -135,6 +135,14 @@ impl CPU {
                 0x85 | 0x95 | 0x8d | 0x9d | 0x99 | 0x81 | 0x91 => {
                     self.sta(&opcode.mode);
                 }
+                /* STX */
+                0x86 | 0x96 | 0x8E => {
+                    self.stx(&opcode.mode);
+                }
+                /* STY */
+                0x84 | 0x94 | 0x8C => {
+                    self.sty(&opcode.mode);
+                }
                 /* AND */
                 0x29 | 0x25 | 0x35 | 0x2D | 0x3D | 0x39 | 0x21 | 0x31 => self.and(&opcode.mode),
                 /* TAX */
@@ -284,9 +292,22 @@ impl CPU {
         self.update_zero_and_negative_flags(self.register_y)
     }
 
+    /// Store Accumulator
     fn sta(&mut self, mode: &AddressingMode) {
         let addr = self.get_operand_address(mode);
         self.mem_write(addr, self.register_a);
+    }
+
+    /// Store register X
+    fn stx(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        self.mem_write(addr, self.register_x);
+    }
+
+    /// Store register Y
+    fn sty(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        self.mem_write(addr, self.register_y);
     }
 
     fn and(&mut self, mode: &AddressingMode) {
@@ -607,5 +628,41 @@ mod test {
         cpu.load_and_run(program);
 
         assert_eq!(data.wrapping_sub(1), cpu.mem_read(addr));
+    }
+
+    #[test]
+    fn test_sta_can_store_register_a() {
+        let mut cpu = CPU::new();
+        let addr = 0x10;
+        // This program loads a 7 into the register A.
+        // Then stores the contents of A into the addr (0x10).
+        let program = vec![0xA9, 7, 0x95, addr as u8, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(7, cpu.mem_read(addr));
+    }
+
+    #[test]
+    fn test_stx_can_store_register_x() {
+        let mut cpu = CPU::new();
+        let addr = 0x10;
+        // This program loads a 7 into the register X.
+        // Then stores the contents of X into the addr (0x10).
+        let program = vec![0xA2, 7, 0x96, addr as u8, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(7, cpu.mem_read(addr));
+    }
+
+    #[test]
+    fn test_sty_can_store_register_y() {
+        let mut cpu = CPU::new();
+        let addr = 0x10;
+        // This program loads a 7 into the register Y.
+        // Then stores the contents of Y into the addr (0x10).
+        let program = vec![0xA0, 7, 0x94, addr as u8, 0x00];
+        cpu.load_and_run(program);
+
+        assert_eq!(7, cpu.mem_read(addr));
     }
 }
