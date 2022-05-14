@@ -191,6 +191,18 @@ impl CPU {
                 0xC6 | 0xD6 | 0xCE | 0xDE => {
                     self.dec(&opcode.mode);
                 }
+                /* CMP */
+                0xC9 | 0xC5 | 0xD5 | 0xCD | 0xDD | 0xD9 | 0xC1 | 0xD1 => {
+                    self.cmp_with(&opcode.mode, self.register_a);
+                }
+                /* CPX */
+                0xE0 | 0xE4 | 0xEC => {
+                    self.cmp_with(&opcode.mode, self.register_x);
+                }
+                /* CPY */
+                0xC0 | 0xC4 | 0xCC => {
+                    self.cmp_with(&opcode.mode, self.register_y);
+                }
                 /* NOP */
                 0xEA => {
                     // No OP
@@ -402,6 +414,20 @@ impl CPU {
         self.update_zero_and_negative_flags(data);
     }
 
+    /// Compare with a register
+    fn cmp_with(&mut self, mode: &AddressingMode, register: u8) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+
+        if data <= register {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+
+        self.update_zero_and_negative_flags(register.wrapping_sub(data));
+    }
+
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         if result == 0 {
             // perform bitwise OR
@@ -433,7 +459,7 @@ impl Default for CPU {
 }
 
 #[cfg(test)]
-mod test {
+mod instructions {
     use super::*;
 
     #[test]
