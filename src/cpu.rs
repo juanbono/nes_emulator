@@ -326,6 +326,14 @@ impl CPU {
                 0x06 | 0x16 | 0x0E | 0x1E => {
                     self.asl(&opcode.mode);
                 }
+                /* RTI */
+                0x40 => {
+                    self.rti();
+                }
+                /* RTS */
+                0x60 => {
+                    self.rts();
+                }
                 /* NOP */
                 0xEA => {
                     // No OP
@@ -640,7 +648,7 @@ impl CPU {
     /// Push processor status
     fn php(&mut self) {
         // reference: https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
-        let mut flags = self.status.clone();
+        let mut flags = self.status;
         flags |= StatusFlag::Break;
         flags |= StatusFlag::Break2;
         self.stack_push(flags.bits());
@@ -664,9 +672,9 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data << 1;
+        data <<= 1;
         if carry_is_set {
-            data = data | 1;
+            data |= 1;
         }
         self.mem_write(addr, data);
         self.update_zero_and_negative_flags(data);
@@ -682,9 +690,9 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data << 1;
+        data <<= 1;
         if carry_is_set {
-            data = data | 1;
+            data |= 1;
         }
         self.register_a = data;
         self.update_zero_and_negative_flags(self.register_a);
@@ -701,9 +709,9 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data >> 1;
+        data >>= 1;
         if carry_is_set {
-            data = data | 0b10000000;
+            data |= 0b10000000;
         }
         self.mem_write(addr, data);
         self.update_zero_and_negative_flags(data);
@@ -719,9 +727,9 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data >> 1;
+        data >>= 1;
         if carry_is_set {
-            data = data | 0b10000000;
+            data |= 0b10000000;
         }
         self.register_a = data;
         self.update_zero_and_negative_flags(self.register_a);
@@ -736,7 +744,7 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data >> 1;
+        data >>= 1;
         self.mem_write(addr, data);
         self.update_zero_and_negative_flags(data);
     }
@@ -749,7 +757,7 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data >> 1;
+        data >>= 1;
         self.register_a = data;
         self.update_zero_and_negative_flags(self.register_a);
     }
@@ -763,7 +771,7 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data << 1;
+        data <<= 1;
         self.mem_write(addr, data);
         self.update_zero_and_negative_flags(data);
     }
@@ -776,9 +784,23 @@ impl CPU {
         } else {
             self.status &= !FlagSet::from(StatusFlag::Carry);
         }
-        data = data << 1;
+        data <<= 1;
         self.register_a = data;
         self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    /// Return from interrupt
+    fn rti(&mut self) {
+        self.status = FlagSet::<StatusFlag>::new(self.stack_pop()).expect("Invalid bytes");
+        self.status &= !FlagSet::from(StatusFlag::Break);
+        self.status |= StatusFlag::Break2;
+
+        self.program_counter = self.stack_pop_u16();
+    }
+
+    /// Return from subroutine
+    fn rts(&mut self) {
+        self.program_counter = self.stack_pop_u16() + 1;
     }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {

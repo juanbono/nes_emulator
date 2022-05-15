@@ -176,11 +176,11 @@ lazy_static! {
         OpCode::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute),
 
         // Logical shift right
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), 
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage),
         OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute),
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), 
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage),
         OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute),
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), 
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage),
 
         // Arithmetic shift left
         OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
@@ -204,10 +204,10 @@ lazy_static! {
         OpCode::new(0x7E, "ROR", 3, 7, AddressingMode::Absolute_X),
 
         // Return from interrupt
-        OpCode::new(0x40, "RTI", 1, 6, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x40, "RTI", 1, 6, AddressingMode::NoneAddressing),
 
         // Return from subroutine
-        OpCode::new(0x60, "RTS", 1, 6, AddressingMode::NoneAddressing), // todo
+        OpCode::new(0x60, "RTS", 1, 6, AddressingMode::NoneAddressing),
 
         // Add with carry
         OpCode::new(0x69, "ADC", 2, 2, AddressingMode::Immediate), // todo
