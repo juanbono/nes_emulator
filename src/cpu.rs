@@ -33,6 +33,9 @@ pub enum AddressingMode {
     NoneAddressing,
 }
 
+const STACK: u16 = 0x0100;
+const STACK_RESET: u8 = 0xFD;
+
 /// The NES CPU.
 /// It uses Little-Endian addressing rather than Big-Endian.
 /// That means that the 8 least significant bits of an address
@@ -44,6 +47,7 @@ pub struct CPU {
     pub register_y: u8,
     pub status: FlagSet<StatusFlag>,
     pub program_counter: u16,
+    pub stack_pointer: u8,
     memory: [u8; 65535], // 0xFFFF = all the CPU memory
 }
 
@@ -203,6 +207,69 @@ impl CPU {
                 0xC0 | 0xC4 | 0xCC => {
                     self.cmp_with(&opcode.mode, self.register_y);
                 }
+                /* BIT */
+                0x24 | 0x2C => {
+                    self.bit(&opcode.mode);
+                }
+                /* JMP Absolute */
+                0x4c => {
+                    let mem_address = self.mem_read_u16(self.program_counter);
+                    self.program_counter = mem_address;
+                }
+                /* JMP Indirect */
+                0x6c => {
+                    let mem_address = self.mem_read_u16(self.program_counter);
+                    // if address $3000 contains $40, $30FF contains $80, and $3100 contains $50,
+                    // the result of JMP ($30FF) will be a transfer of control to $4080 rather than $5080 as you intended
+                    // i.e. the 6502 took the low byte of the address from $30FF and the high byte from $3000
+                    let indirect_ref = if mem_address & 0x00FF == 0x00FF {
+                        let lo = self.mem_read(mem_address);
+                        let hi = self.mem_read(mem_address & 0xFF00);
+                        (hi as u16) << 8 | (lo as u16)
+                    } else {
+                        self.mem_read_u16(mem_address)
+                    };
+
+                    self.program_counter = indirect_ref;
+                }
+                /* JSR */
+                0x20 => {
+                    self.stack_push_u16(self.program_counter + 1);
+                    let target_address = self.mem_read_u16(self.program_counter);
+                    self.program_counter = target_address
+                }
+                /* BPL (branch on plus) */
+                0x10 => {
+                    self.branch(!self.status.contains(StatusFlag::Negative));
+                }
+                /* BMI (branch on minus) */
+                0x30 => {
+                    self.branch(self.status.contains(StatusFlag::Negative));
+                }
+                /* BVC (branch on overflow clear) */
+                0x50 => {
+                    self.branch(!self.status.contains(StatusFlag::Overflow));
+                }
+                /* BVS (branch on overflow set) */
+                0x70 => {
+                    self.branch(self.status.contains(StatusFlag::Overflow));
+                }
+                /* BCC (branch on carry clear) */
+                0x90 => {
+                    self.branch(!self.status.contains(StatusFlag::Carry));
+                }
+                /* BCS (branch on carry set) */
+                0xB0 => {
+                    self.branch(self.status.contains(StatusFlag::Carry));
+                }
+                /* BNE (branch on not equal) */
+                0xD0 => {
+                    self.branch(!self.status.contains(StatusFlag::Zero));
+                }
+                /* BEQ (branch on equal) */
+                0xF0 => {
+                    self.branch(self.status.contains(StatusFlag::Zero));
+                }
                 /* NOP */
                 0xEA => {
                     // No OP
@@ -239,7 +306,8 @@ impl CPU {
         self.register_y = 0;
         self.status.clear();
 
-        self.program_counter = self.mem_read_u16(0xFFFC)
+        self.program_counter = self.mem_read_u16(0xFFFC);
+        self.stack_pointer = STACK_RESET;
     }
 
     /// Loads a program into PRG ROM space and save the reference to the
@@ -428,6 +496,69 @@ impl CPU {
         self.update_zero_and_negative_flags(register.wrapping_sub(data));
     }
 
+    /// Bit tests
+    fn bit(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+
+        if self.register_a & data == 0 {
+            self.status |= StatusFlag::Zero;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Zero);
+        }
+
+        if data & FlagSet::from(StatusFlag::Negative).bits() == 0 {
+            self.status &= !FlagSet::from(StatusFlag::Negative);
+        } else {
+            self.status |= StatusFlag::Negative;
+        }
+
+        if data & FlagSet::from(StatusFlag::Overflow).bits() == 0 {
+            self.status &= !FlagSet::from(StatusFlag::Overflow);
+        } else {
+            self.status |= StatusFlag::Overflow;
+        }
+    }
+
+    // Stack operations
+
+    fn stack_pop(&mut self) -> u8 {
+        self.stack_pointer = self.stack_pointer.wrapping_add(1);
+        self.mem_read((STACK as u16) + self.stack_pointer as u16)
+    }
+
+    fn stack_push(&mut self, data: u8) {
+        self.mem_write((STACK as u16) + self.stack_pointer as u16, data);
+        self.stack_pointer = self.stack_pointer.wrapping_sub(1)
+    }
+
+    fn stack_push_u16(&mut self, data: u16) {
+        let hi = (data >> 8) as u8;
+        let lo = (data & 0xff) as u8;
+        self.stack_push(hi);
+        self.stack_push(lo);
+    }
+
+    fn stack_pop_u16(&mut self) -> u16 {
+        let lo = self.stack_pop() as u16;
+        let hi = self.stack_pop() as u16;
+
+        hi << 8 | lo
+    }
+
+    /// branch if the condition is met
+    fn branch(&mut self, condition: bool) {
+        if condition {
+            let jump: i8 = self.mem_read(self.program_counter) as i8;
+            let jump_addr = self
+                .program_counter
+                .wrapping_add(1)
+                .wrapping_add(jump as u16);
+
+            self.program_counter = jump_addr;
+        }
+    }
+
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         if result == 0 {
             // perform bitwise OR
@@ -453,6 +584,7 @@ impl Default for CPU {
             register_y: 0,
             status: None.into(),
             program_counter: 0,
+            stack_pointer: STACK_RESET,
             memory: [0; 0xFFFF],
         }
     }

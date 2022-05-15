@@ -49,9 +49,19 @@ lazy_static! {
         OpCode::new(0xF8, "SED", 1, 2, AddressingMode::NoneAddressing),
 
         // Jumps
-        OpCode::new(0x4C, "JMP", 3, 3, AddressingMode::Absolute), // todo
-        OpCode::new(0x6C, "JMP", 3, 5, AddressingMode::Indirect_X), //todo
-        OpCode::new(0x20, "JSR", 3, 6, AddressingMode::Absolute), // todo
+        OpCode::new(0x4C, "JMP", 3, 3, AddressingMode::Absolute), 
+        OpCode::new(0x6C, "JMP", 3, 5, AddressingMode::Indirect_X),
+        OpCode::new(0x20, "JSR", 3, 6, AddressingMode::Absolute),
+
+        // Branch instructions
+        OpCode::new(0x10, "BPL", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0x30, "BMI", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0x50, "BVC", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0x70, "BVS", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0x90, "BCC", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0xB0, "BCS", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0xD0, "BNE", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
+        OpCode::new(0xF0, "BEQ", 2, 2 /* +1 if branch succeds and +2 if page crossed */, AddressingMode::NoneAddressing),
 
         // Increment memory
         OpCode::new(0xE6, "INC", 2, 5, AddressingMode::ZeroPage),
@@ -162,8 +172,8 @@ lazy_static! {
         OpCode::new(0xEA, "NOT", 1, 2, AddressingMode::NoneAddressing),
 
         // test BITs
-        OpCode::new(0x24, "BIT", 2, 2, AddressingMode::ZeroPage), //todo
-        OpCode::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute), // todo
+        OpCode::new(0x24, "BIT", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute),
 
         // Logical shift right
         OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
