@@ -270,6 +270,30 @@ impl CPU {
                 0xF0 => {
                     self.branch(self.status.contains(StatusFlag::Zero));
                 }
+                /* TXS (transfer X to stack pointer) */
+                0x9A => {
+                    self.txs();
+                }
+                /* TSX (transfer stack pointer to X) */
+                0xBA => {
+                    self.tsx();
+                }
+                /* PHA (push accumulator) */
+                0x48 => {
+                    self.pha();
+                }
+                /* PLA (pull accumulator) */
+                0x68 => {
+                    self.pla();
+                }
+                /* PHP (push processor status) */
+                0x08 => {
+                    self.php();
+                }
+                /* PLP (pull processor status) */
+                0x28 => {
+                    self.plp();
+                }
                 /* NOP */
                 0xEA => {
                     // No OP
@@ -557,6 +581,44 @@ impl CPU {
 
             self.program_counter = jump_addr;
         }
+    }
+
+    /// Stack pointer to register X
+    fn tsx(&mut self) {
+        self.register_x = self.stack_pointer;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    /// Register X to stack pointer
+    fn txs(&mut self) {
+        self.stack_pointer = self.register_x;
+    }
+
+    /// Push accumulator
+    fn pha(&mut self) {
+        self.stack_push(self.register_a);
+    }
+
+    /// Pull accumulator
+    fn pla(&mut self) {
+        let data = self.stack_pop();
+        self.register_a = data;
+    }
+
+    /// Push processor status
+    fn php(&mut self) {
+        // reference: https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
+        let mut flags = self.status.clone();
+        flags |= StatusFlag::Break;
+        flags |= StatusFlag::Break2;
+        self.stack_push(flags.bits());
+    }
+
+    /// Pull processor status
+    fn plp(&mut self) {
+        self.status = FlagSet::<StatusFlag>::new(self.stack_pop()).expect("Invalid bytes");
+        self.status &= !FlagSet::from(StatusFlag::Break);
+        self.status |= StatusFlag::Break2;
     }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {
