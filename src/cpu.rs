@@ -294,6 +294,22 @@ impl CPU {
                 0x28 => {
                     self.plp();
                 }
+                /* ROL (accumulator) */
+                0x2A => {
+                    self.rol_accumulator();
+                }
+                /* ROL */
+                0x26 | 0x36 | 0x2E | 0x3E => {
+                    self.rol(&opcode.mode);
+                }
+                /* ROR (accumulator) */
+                0x6A => {
+                    self.ror_accumulator();
+                }
+                /* ROR */
+                0x66 | 0x76 | 0x6e | 0x7e => {
+                    self.ror(&opcode.mode);
+                }
                 /* NOP */
                 0xEA => {
                     // No OP
@@ -619,6 +635,80 @@ impl CPU {
         self.status = FlagSet::<StatusFlag>::new(self.stack_pop()).expect("Invalid bytes");
         self.status &= !FlagSet::from(StatusFlag::Break);
         self.status |= StatusFlag::Break2;
+    }
+
+    /// Rotate left
+    fn rol(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+        let carry_is_set = self.status.contains(StatusFlag::Carry);
+
+        if data >> 7 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data << 1;
+        if carry_is_set {
+            data = data | 1;
+        }
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+    }
+
+    /// Rotate left (accumulator)
+    fn rol_accumulator(&mut self) {
+        let mut data = self.register_a;
+        let carry_is_set = self.status.contains(StatusFlag::Carry);
+
+        if data >> 7 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data << 1;
+        if carry_is_set {
+            data = data | 1;
+        }
+        self.register_a = data;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    /// Rotate right
+    fn ror(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+        let carry_is_set = self.status.contains(StatusFlag::Carry);
+
+        if data & 1 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data >> 1;
+        if carry_is_set {
+            data = data | 0b10000000;
+        }
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+    }
+
+    /// Rotate right (accumulator)
+    fn ror_accumulator(&mut self) {
+        let mut data = self.register_a;
+        let carry_is_set = self.status.contains(StatusFlag::Carry);
+
+        if data & 1 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data >> 1;
+        if carry_is_set {
+            data = data | 0b10000000;
+        }
+        self.register_a = data;
+        self.update_zero_and_negative_flags(self.register_a);
     }
 
     fn update_zero_and_negative_flags(&mut self, result: u8) {

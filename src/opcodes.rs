@@ -49,7 +49,7 @@ lazy_static! {
         OpCode::new(0xF8, "SED", 1, 2, AddressingMode::NoneAddressing),
 
         // Jumps
-        OpCode::new(0x4C, "JMP", 3, 3, AddressingMode::Absolute), 
+        OpCode::new(0x4C, "JMP", 3, 3, AddressingMode::Absolute),
         OpCode::new(0x6C, "JMP", 3, 5, AddressingMode::Indirect_X),
         OpCode::new(0x20, "JSR", 3, 6, AddressingMode::Absolute),
 
@@ -190,18 +190,18 @@ lazy_static! {
         OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
 
         // Rotate left
-        OpCode::new(0x2A, "ROL", 1, 2, AddressingMode::NoneAddressing), // todo
-        OpCode::new(0x26, "ROL", 2, 5, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x36, "ROL", 2, 6, AddressingMode::ZeroPage_X), // todo
-        OpCode::new(0x2E, "ROL", 3, 6, AddressingMode::Absolute), // todo
-        OpCode::new(0x3E, "ROL", 3, 7, AddressingMode::Absolute_X), // todo
+        OpCode::new(0x2A, "ROL", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x26, "ROL", 2, 5, AddressingMode::ZeroPage),
+        OpCode::new(0x36, "ROL", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode::new(0x2E, "ROL", 3, 6, AddressingMode::Absolute),
+        OpCode::new(0x3E, "ROL", 3, 7, AddressingMode::Absolute_X),
 
         // Rotate right
-        OpCode::new(0x6A, "ROR", 1, 2, AddressingMode::NoneAddressing), // todo
-        OpCode::new(0x66, "ROR", 2, 5, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x76, "ROR", 2, 6, AddressingMode::ZeroPage_X), // todo
-        OpCode::new(0x6E, "ROR", 3, 6, AddressingMode::Absolute), // todo
-        OpCode::new(0x7E, "ROR", 3, 7, AddressingMode::Absolute_X), // todo
+        OpCode::new(0x6A, "ROR", 1, 2, AddressingMode::NoneAddressing),
+        OpCode::new(0x66, "ROR", 2, 5, AddressingMode::ZeroPage),
+        OpCode::new(0x76, "ROR", 2, 6, AddressingMode::ZeroPage_X),
+        OpCode::new(0x6E, "ROR", 3, 6, AddressingMode::Absolute),
+        OpCode::new(0x7E, "ROR", 3, 7, AddressingMode::Absolute_X),
 
         // Return from interrupt
         OpCode::new(0x40, "RTI", 1, 6, AddressingMode::NoneAddressing), // todo
