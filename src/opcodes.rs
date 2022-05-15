@@ -176,18 +176,18 @@ lazy_static! {
         OpCode::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute),
 
         // Logical shift right
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
-        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute), // todo
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
-        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute), // todo
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), //todo
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), 
+        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), 
+        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage), 
 
         // Arithmetic shift left
-        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute), // todo
-        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
-        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute), // todo
-        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage), // todo
+        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
 
         // Rotate left
         OpCode::new(0x2A, "ROL", 1, 2, AddressingMode::NoneAddressing),

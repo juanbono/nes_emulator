@@ -307,8 +307,24 @@ impl CPU {
                     self.ror_accumulator();
                 }
                 /* ROR */
-                0x66 | 0x76 | 0x6e | 0x7e => {
+                0x66 | 0x76 | 0x6E | 0x7E => {
                     self.ror(&opcode.mode);
+                }
+                /* LSR (accumulator) */
+                0x4A => {
+                    self.lsr_accumulator();
+                }
+                /* LSR */
+                0x46 | 0x56 | 0x4E | 0x5E => {
+                    self.lsr(&opcode.mode);
+                }
+                /* ASL (accumulator) */
+                0x0a => {
+                    self.asl_accumulator();
+                }
+                /* ASL */
+                0x06 | 0x16 | 0x0E | 0x1E => {
+                    self.asl(&opcode.mode);
                 }
                 /* NOP */
                 0xEA => {
@@ -707,6 +723,60 @@ impl CPU {
         if carry_is_set {
             data = data | 0b10000000;
         }
+        self.register_a = data;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    /// Logic shift right
+    fn lsr(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+        if data & 1 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data >> 1;
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+    }
+
+    // Logic shift right (accumulator)
+    fn lsr_accumulator(&mut self) {
+        let mut data = self.register_a;
+        if data & 1 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data >> 1;
+        self.register_a = data;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    /// Arithmetic shift left
+    fn asl(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let mut data = self.mem_read(addr);
+        if data >> 7 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data << 1;
+        self.mem_write(addr, data);
+        self.update_zero_and_negative_flags(data);
+    }
+
+    /// Arithmetic shift left (accumulator)
+    fn asl_accumulator(&mut self) {
+        let mut data = self.register_a;
+        if data >> 7 == 1 {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+        data = data << 1;
         self.register_a = data;
         self.update_zero_and_negative_flags(self.register_a);
     }
