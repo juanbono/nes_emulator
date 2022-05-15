@@ -334,6 +334,14 @@ impl CPU {
                 0x60 => {
                     self.rts();
                 }
+                /* ADC */
+                0x69 | 0x65 | 0x75 | 0x6D | 0x7D | 0x79 | 0x61 | 0x71 => {
+                    self.adc(&opcode.mode);
+                }
+                /* SBC */
+                0xE9 | 0xE5 | 0xF5 | 0xED | 0xFD | 0xF9 | 0xE1 | 0xF1 => {
+                    self.sbc(&opcode.mode);
+                }
                 /* NOP */
                 0xEA => {
                     // No OP
@@ -803,6 +811,47 @@ impl CPU {
         self.program_counter = self.stack_pop_u16() + 1;
     }
 
+    /// Subtract with Carry
+    fn sbc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let data = self.mem_read(addr);
+        self.add_to_register_a(((data as i8).wrapping_neg().wrapping_sub(1)) as u8);
+    }
+
+    /// Add with Carry
+    fn adc(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+        self.add_to_register_a(value);
+    }
+
+    fn add_to_register_a(&mut self, data: u8) {
+        let mut carry_value = 0;
+        if self.status.contains(StatusFlag::Carry) {
+            carry_value = 1;
+        };
+        let sum = self.register_a as u16 + data as u16 + carry_value;
+
+        let has_carry = sum > 0xFF;
+
+        if has_carry {
+            self.status |= StatusFlag::Carry;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Carry);
+        }
+
+        let result = sum as u8;
+
+        if (data ^ result) & (result ^ self.register_a) & 0x80 != 0 {
+            self.status |= StatusFlag::Overflow;
+        } else {
+            self.status &= !FlagSet::from(StatusFlag::Overflow);
+        }
+
+        self.register_a = result;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         if result == 0 {
             // perform bitwise OR
@@ -1030,11 +1079,6 @@ mod instructions {
         cpu.load_and_run(program);
 
         assert!(cpu.status.contains(StatusFlag::InterruptDisable));
-    }
-
-    #[test]
-    fn test_clv_clears_overflow_flag() {
-        todo!()
     }
 
     #[test]
