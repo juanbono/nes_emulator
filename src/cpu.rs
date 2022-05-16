@@ -2,8 +2,9 @@
 // 1. Memory Map
 // 2. CPU Registers
 use crate::opcodes;
-use flagset::{flags, FlagSet};
+use flagset::{flags, FlagSet, InvalidBits};
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 
 flags! {
     pub enum StatusFlag: u8 {
@@ -15,6 +16,40 @@ flags! {
         Break2 = 0b0010_0000,
         Overflow = 0b0100_0000,
         Negative = 0b1000_0000,
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Status(FlagSet<StatusFlag>);
+
+impl Status {
+    pub fn from(bits: u8) -> Result<Self, InvalidBits> {
+        match FlagSet::<StatusFlag>::new(bits) {
+            Ok(flags) => Ok(Status(flags)),
+            Err(invalid_bits) => Err(invalid_bits),
+        }
+    }
+
+    pub fn insert(&mut self, flag: StatusFlag) {
+        self.0 |= flag
+    }
+
+    pub fn remove(&mut self, flag: StatusFlag) {
+        self.0 &= !FlagSet::from(flag);
+    }
+}
+
+impl Deref for Status {
+    type Target = FlagSet<StatusFlag>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Status {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -45,7 +80,7 @@ pub struct CPU {
     pub register_a: u8,
     pub register_x: u8,
     pub register_y: u8,
-    pub status: FlagSet<StatusFlag>,
+    pub status: Status,
     pub program_counter: u16,
     pub stack_pointer: u8,
     memory: [u8; 65535], // 0xFFFF = all the CPU memory
@@ -96,11 +131,11 @@ impl CPU {
         }
     }
 
-    fn mem_read(&self, addr: u16) -> u8 {
+    pub fn mem_read(&self, addr: u16) -> u8 {
         self.memory[addr as usize]
     }
 
-    fn mem_write(&mut self, addr: u16, data: u8) {
+    pub fn mem_write(&mut self, addr: u16, data: u8) {
         self.memory[addr as usize] = data;
     }
 
@@ -111,6 +146,13 @@ impl CPU {
     }
 
     pub fn run(&mut self) {
+        self.run_with_callback(|_| {});
+    }
+
+    pub fn run_with_callback<F>(&mut self, mut callback: F)
+    where
+        F: FnMut(&mut CPU),
+    {
         let opcodes: &HashMap<u8, &'static opcodes::OpCode> = &(*opcodes::OPCODES_MAP);
 
         loop {
@@ -354,6 +396,8 @@ impl CPU {
             if program_counter_state == self.program_counter {
                 self.program_counter += (opcode.len - 1) as u16;
             }
+
+            callback(self);
         }
     }
 
@@ -376,8 +420,7 @@ impl CPU {
         self.register_a = 0;
         self.register_x = 0;
         self.register_y = 0;
-        self.status.clear();
-
+        self.status = Status::from(0b00100100).unwrap();
         self.program_counter = self.mem_read_u16(0xFFFC);
         self.stack_pointer = STACK_RESET;
     }
@@ -503,37 +546,37 @@ impl CPU {
 
     /// clear carry flag
     fn clc(&mut self) {
-        self.status &= !FlagSet::from(StatusFlag::Carry);
+        self.status.remove(StatusFlag::Carry);
     }
 
     /// set carry flag
     fn sec(&mut self) {
-        self.status |= StatusFlag::Carry;
+        self.status.insert(StatusFlag::Carry);
     }
 
     /// clear interrupt flag
     fn cli(&mut self) {
-        self.status &= !FlagSet::from(StatusFlag::InterruptDisable);
+        self.status.remove(StatusFlag::InterruptDisable);
     }
 
     /// set interrupt flag
     fn sei(&mut self) {
-        self.status |= StatusFlag::InterruptDisable;
+        self.status.insert(StatusFlag::InterruptDisable);
     }
 
     /// clear overflow flag
     fn clv(&mut self) {
-        self.status &= !FlagSet::from(StatusFlag::Overflow);
+        self.status.remove(StatusFlag::Overflow);
     }
 
     /// clear decimal mode flag
     fn cld(&mut self) {
-        self.status &= !FlagSet::from(StatusFlag::DecimalMode);
+        self.status.remove(StatusFlag::DecimalMode);
     }
 
     /// set decimal mode flag
     fn sed(&mut self) {
-        self.status |= StatusFlag::DecimalMode;
+        self.status.insert(StatusFlag::DecimalMode);
     }
 
     /// Increment memory
@@ -560,9 +603,9 @@ impl CPU {
         let data = self.mem_read(addr);
 
         if data <= register {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
 
         self.update_zero_and_negative_flags(register.wrapping_sub(data));
@@ -574,21 +617,21 @@ impl CPU {
         let data = self.mem_read(addr);
 
         if self.register_a & data == 0 {
-            self.status |= StatusFlag::Zero;
+            self.status.insert(StatusFlag::Zero);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Zero);
+            self.status.remove(StatusFlag::Zero);
         }
 
         if data & FlagSet::from(StatusFlag::Negative).bits() == 0 {
-            self.status &= !FlagSet::from(StatusFlag::Negative);
+            self.status.remove(StatusFlag::Negative);
         } else {
-            self.status |= StatusFlag::Negative;
+            self.status.insert(StatusFlag::Negative);
         }
 
         if data & FlagSet::from(StatusFlag::Overflow).bits() == 0 {
-            self.status &= !FlagSet::from(StatusFlag::Overflow);
+            self.status.remove(StatusFlag::Overflow);
         } else {
-            self.status |= StatusFlag::Overflow;
+            self.status.insert(StatusFlag::Overflow);
         }
     }
 
@@ -657,16 +700,16 @@ impl CPU {
     fn php(&mut self) {
         // reference: https://wiki.nesdev.com/w/index.php/CPU_status_flag_behavior
         let mut flags = self.status;
-        flags |= StatusFlag::Break;
-        flags |= StatusFlag::Break2;
+        flags.insert(StatusFlag::Break);
+        flags.insert(StatusFlag::Break2);
         self.stack_push(flags.bits());
     }
 
     /// Pull processor status
     fn plp(&mut self) {
-        self.status = FlagSet::<StatusFlag>::new(self.stack_pop()).expect("Invalid bytes");
-        self.status &= !FlagSet::from(StatusFlag::Break);
-        self.status |= StatusFlag::Break2;
+        self.status = Status::from(self.stack_pop()).expect("Invalid bytes");
+        self.status.remove(StatusFlag::Break);
+        self.status.insert(StatusFlag::Break2);
     }
 
     /// Rotate left
@@ -676,16 +719,20 @@ impl CPU {
         let carry_is_set = self.status.contains(StatusFlag::Carry);
 
         if data >> 7 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data <<= 1;
         if carry_is_set {
             data |= 1;
         }
         self.mem_write(addr, data);
-        self.update_zero_and_negative_flags(data);
+        if data >> 7 == 1 {
+            self.status.insert(StatusFlag::Negative);
+        } else {
+            self.status.remove(StatusFlag::Negative);
+        }
     }
 
     /// Rotate left (accumulator)
@@ -694,9 +741,9 @@ impl CPU {
         let carry_is_set = self.status.contains(StatusFlag::Carry);
 
         if data >> 7 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data <<= 1;
         if carry_is_set {
@@ -713,16 +760,20 @@ impl CPU {
         let carry_is_set = self.status.contains(StatusFlag::Carry);
 
         if data & 1 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data >>= 1;
         if carry_is_set {
             data |= 0b10000000;
         }
         self.mem_write(addr, data);
-        self.update_zero_and_negative_flags(data);
+        if data >> 7 == 1 {
+            self.status.insert(StatusFlag::Negative);
+        } else {
+            self.status.remove(StatusFlag::Negative);
+        }
     }
 
     /// Rotate right (accumulator)
@@ -731,9 +782,9 @@ impl CPU {
         let carry_is_set = self.status.contains(StatusFlag::Carry);
 
         if data & 1 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data >>= 1;
         if carry_is_set {
@@ -748,9 +799,9 @@ impl CPU {
         let addr = self.get_operand_address(mode);
         let mut data = self.mem_read(addr);
         if data & 1 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data >>= 1;
         self.mem_write(addr, data);
@@ -761,9 +812,9 @@ impl CPU {
     fn lsr_accumulator(&mut self) {
         let mut data = self.register_a;
         if data & 1 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data >>= 1;
         self.register_a = data;
@@ -775,9 +826,9 @@ impl CPU {
         let addr = self.get_operand_address(mode);
         let mut data = self.mem_read(addr);
         if data >> 7 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data <<= 1;
         self.mem_write(addr, data);
@@ -788,9 +839,9 @@ impl CPU {
     fn asl_accumulator(&mut self) {
         let mut data = self.register_a;
         if data >> 7 == 1 {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
         data <<= 1;
         self.register_a = data;
@@ -799,9 +850,9 @@ impl CPU {
 
     /// Return from interrupt
     fn rti(&mut self) {
-        self.status = FlagSet::<StatusFlag>::new(self.stack_pop()).expect("Invalid bytes");
-        self.status &= !FlagSet::from(StatusFlag::Break);
-        self.status |= StatusFlag::Break2;
+        self.status = Status::from(self.stack_pop()).expect("Invalid bytes");
+        self.status.remove(StatusFlag::Break);
+        self.status.insert(StatusFlag::Break2);
 
         self.program_counter = self.stack_pop_u16();
     }
@@ -835,17 +886,17 @@ impl CPU {
         let has_carry = sum > 0xFF;
 
         if has_carry {
-            self.status |= StatusFlag::Carry;
+            self.status.insert(StatusFlag::Carry);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Carry);
+            self.status.remove(StatusFlag::Carry);
         }
 
         let result = sum as u8;
 
         if (data ^ result) & (result ^ self.register_a) & 0x80 != 0 {
-            self.status |= StatusFlag::Overflow;
+            self.status.insert(StatusFlag::Overflow);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Overflow);
+            self.status.remove(StatusFlag::Overflow);
         }
 
         self.register_a = result;
@@ -855,16 +906,16 @@ impl CPU {
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         if result == 0 {
             // perform bitwise OR
-            self.status |= StatusFlag::Zero;
+            self.status.insert(StatusFlag::Zero);
         } else {
             // perform bitwise AND
-            self.status &= !FlagSet::from(StatusFlag::Zero);
+            self.status.remove(StatusFlag::Zero);
         }
 
         if result & FlagSet::from(StatusFlag::Negative).bits() != 0 {
-            self.status |= StatusFlag::Negative;
+            self.status.insert(StatusFlag::Negative);
         } else {
-            self.status &= !FlagSet::from(StatusFlag::Negative);
+            self.status.remove(StatusFlag::Negative);
         }
     }
 }
@@ -875,7 +926,7 @@ impl Default for CPU {
             register_a: 0,
             register_x: 0,
             register_y: 0,
-            status: None.into(),
+            status: Status::from(0b00100100).expect("Invalid bits."),
             program_counter: 0,
             stack_pointer: STACK_RESET,
             memory: [0; 0xFFFF],
