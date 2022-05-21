@@ -2,7 +2,7 @@
 // 1. Memory Map
 // 2. CPU Registers
 use crate::opcodes;
-use flagset::{flags, FlagSet, InvalidBits};
+use flagset::{flags, FlagSet};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
@@ -23,11 +23,9 @@ flags! {
 pub struct Status(FlagSet<StatusFlag>);
 
 impl Status {
-    pub fn from(bits: u8) -> Result<Self, InvalidBits> {
-        match FlagSet::<StatusFlag>::new(bits) {
-            Ok(flags) => Ok(Status(flags)),
-            Err(invalid_bits) => Err(invalid_bits),
-        }
+    pub fn from(bits: u8) -> Self {
+        let flags = FlagSet::<StatusFlag>::new_truncated(bits);
+        Status(flags)
     }
 
     pub fn insert(&mut self, flag: StatusFlag) {
@@ -420,7 +418,7 @@ impl CPU {
         self.register_a = 0;
         self.register_x = 0;
         self.register_y = 0;
-        self.status = Status::from(0b00100100).unwrap();
+        self.status = Status::from(0b100100);
         self.program_counter = self.mem_read_u16(0xFFFC);
         self.stack_pointer = STACK_RESET;
     }
@@ -707,7 +705,7 @@ impl CPU {
 
     /// Pull processor status
     fn plp(&mut self) {
-        self.status = Status::from(self.stack_pop()).expect("Invalid bytes");
+        self.status = Status::from(self.stack_pop());
         self.status.remove(StatusFlag::Break);
         self.status.insert(StatusFlag::Break2);
     }
@@ -850,7 +848,7 @@ impl CPU {
 
     /// Return from interrupt
     fn rti(&mut self) {
-        self.status = Status::from(self.stack_pop()).expect("Invalid bytes");
+        self.status = Status::from(self.stack_pop());
         self.status.remove(StatusFlag::Break);
         self.status.insert(StatusFlag::Break2);
 
@@ -926,7 +924,7 @@ impl Default for CPU {
             register_a: 0,
             register_x: 0,
             register_y: 0,
-            status: Status::from(0b00100100).expect("Invalid bits."),
+            status: Status::from(0b100100),
             program_counter: 0,
             stack_pointer: STACK_RESET,
             memory: [0; 0xFFFF],
