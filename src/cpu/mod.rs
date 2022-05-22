@@ -1,55 +1,9 @@
-// Recursos disponibles para el CPU:
-// 1. Memory Map
-// 2. CPU Registers
-use crate::opcodes;
-use flagset::{flags, FlagSet};
+mod opcodes;
+mod status;
+
+use flagset::FlagSet;
+use status::{Status, StatusFlag};
 use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
-
-flags! {
-    pub enum StatusFlag: u8 {
-        Carry = 0b0000_0001,
-        Zero = 0b0000_0010,
-        InterruptDisable = 0b0000_0100,
-        DecimalMode = 0b0000_1000,
-        Break = 0b0001_0000,
-        Break2 = 0b0010_0000,
-        Overflow = 0b0100_0000,
-        Negative = 0b1000_0000,
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Status(FlagSet<StatusFlag>);
-
-impl Status {
-    pub fn from(bits: u8) -> Self {
-        let flags = FlagSet::<StatusFlag>::new_truncated(bits);
-        Status(flags)
-    }
-
-    pub fn insert(&mut self, flag: StatusFlag) {
-        self.0 |= flag
-    }
-
-    pub fn remove(&mut self, flag: StatusFlag) {
-        self.0 &= !FlagSet::from(flag);
-    }
-}
-
-impl Deref for Status {
-    type Target = FlagSet<StatusFlag>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Status {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
@@ -81,7 +35,7 @@ pub struct CPU {
     pub status: Status,
     pub program_counter: u16,
     pub stack_pointer: u8,
-    memory: [u8; 65535], // 0xFFFF = all the CPU memory
+    memory: [u8; 0xFFFF], // 0xFFFF = all the CPU memory
 }
 
 impl CPU {
@@ -161,7 +115,7 @@ impl CPU {
             let opcode = opcodes
                 .get(&code)
                 .unwrap_or_else(|| panic!("OpCode {:x} is not recognized", code));
-
+            dbg!(&opcode);
             match code {
                 /* LDA */
                 0xa9 | 0xa5 | 0xb5 | 0xad | 0xbd | 0xb9 | 0xa1 | 0xb1 => {
@@ -351,7 +305,7 @@ impl CPU {
                     self.ror(&opcode.mode);
                 }
                 /* LSR (accumulator) */
-                0x4A => {
+                0x4a => {
                     self.lsr_accumulator();
                 }
                 /* LSR */
@@ -426,8 +380,8 @@ impl CPU {
     /// Loads a program into PRG ROM space and save the reference to the
     /// code into 0xFFFC memory cell.
     pub fn load(&mut self, program: Vec<u8>) {
-        self.memory[0x8000..(0x8000 + program.len())].copy_from_slice(&program);
-        self.mem_write_u16(0xFFFC, 0x8000);
+        self.memory[0x0600..(0x0600 + program.len())].copy_from_slice(&program[..]);
+        self.mem_write_u16(0xFFFC, 0x0600);
     }
 
     ////////////////

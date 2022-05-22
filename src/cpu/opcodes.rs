@@ -2,6 +2,7 @@ use crate::cpu::AddressingMode;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct OpCode {
     pub code: u8,
     pub mnemonic: &'static str,
@@ -176,18 +177,18 @@ lazy_static! {
         OpCode::new(0x2C, "BIT", 3, 4, AddressingMode::Absolute),
 
         // Logical shift right
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage),
-        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute),
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage),
-        OpCode::new(0x2C, "LSR", 3, 4, AddressingMode::Absolute),
-        OpCode::new(0x24, "LSR", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x4A, "LSR", 1, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x46, "LSR", 2, 5, AddressingMode::Absolute),
+        OpCode::new(0x56, "LSR", 2, 6, AddressingMode::ZeroPage),
+        OpCode::new(0x4E, "LSR", 3, 6, AddressingMode::Absolute),
+        OpCode::new(0x5E, "LSR", 3, 7, AddressingMode::ZeroPage),
 
         // Arithmetic shift left
-        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
-        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute),
-        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
-        OpCode::new(0x2C, "ASL", 3, 4, AddressingMode::Absolute),
-        OpCode::new(0x24, "ASL", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x0A, "ASL", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x06, "ASL", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x16, "ASL", 2, 2, AddressingMode::ZeroPage),
+        OpCode::new(0x0E, "ASL", 3, 4, AddressingMode::Absolute),
+        OpCode::new(0x1E, "ASL", 2, 2, AddressingMode::ZeroPage),
 
         // Rotate left
         OpCode::new(0x2A, "ROL", 1, 2, AddressingMode::NoneAddressing),
