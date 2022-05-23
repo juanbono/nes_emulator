@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.4.0"
 flagset = "0.4.3"
+
+sdl2 = "0.34.0"
+rand = "=0.7.3"
+native-tls = "0.2.10"
