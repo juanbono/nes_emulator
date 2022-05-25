@@ -1,8 +1,10 @@
 mod opcodes;
 mod status;
+mod bus;
 
 use flagset::FlagSet;
 use status::{Status, StatusFlag};
+pub use bus::Bus;
 use std::collections::HashMap;
 
 #[allow(non_camel_case_types)]
@@ -35,12 +37,15 @@ pub struct CPU {
     pub status: Status,
     pub program_counter: u16,
     pub stack_pointer: u8,
-    memory: [u8; 0xFFFF], // 0xFFFF = all the CPU memory
+    pub bus: Bus,
 }
 
 impl CPU {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(bus: Bus) -> Self {
+        CPU {
+            bus,
+            ..Default::default()
+        }
     }
 
     fn get_operand_address(&self, mode: &AddressingMode) -> u16 {
@@ -84,16 +89,17 @@ impl CPU {
     }
 
     pub fn mem_read(&self, addr: u16) -> u8 {
-        self.memory[addr as usize]
+        self.bus.mem_read(addr)
     }
 
     pub fn mem_write(&mut self, addr: u16, data: u8) {
-        self.memory[addr as usize] = data;
+        self.bus.mem_write(addr, data)
     }
 
     pub fn load_and_run(&mut self, program: Vec<u8>) {
         self.load(program);
         self.reset();
+        self.program_counter = 0x0600;
         self.run()
     }
 
@@ -354,16 +360,11 @@ impl CPU {
     }
 
     fn mem_read_u16(&self, pos: u16) -> u16 {
-        let lo = self.mem_read(pos) as u16;
-        let hi = self.mem_read(pos + 1) as u16;
-        (hi << 8) | (lo as u16)
+        self.bus.mem_read_u16(pos)
     }
 
     fn mem_write_u16(&mut self, pos: u16, data: u16) {
-        let hi = (data >> 8) as u8;
-        let lo = (data & 0xff) as u8;
-        self.mem_write(pos, lo);
-        self.mem_write(pos + 1, hi);
+        self.bus.mem_write_u16(pos, data)
     }
 
     /// Restores the state of all registers and initialize program_counter by
@@ -380,7 +381,9 @@ impl CPU {
     /// Loads a program into PRG ROM space and save the reference to the
     /// code into 0xFFFC memory cell.
     pub fn load(&mut self, program: Vec<u8>) {
-        self.memory[0x0600..(0x0600 + program.len())].copy_from_slice(&program[..]);
+        for i in 0..(program.len() as u16) {
+            self.mem_write(0x0600 + i, program[i as usize]);
+        }
         self.mem_write_u16(0xFFFC, 0x0600);
     }
 
@@ -881,7 +884,7 @@ impl Default for CPU {
             status: Status::from(0b100100),
             program_counter: 0,
             stack_pointer: STACK_RESET,
-            memory: [0; 0xFFFF],
+            bus: Bus::new(),
         }
     }
 }
@@ -892,7 +895,8 @@ mod instructions {
 
     #[test]
     fn test_0xa9_lda_immediate_load_data() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0x05, 0x00]);
 
         assert_eq!(cpu.register_a, 0x05);
@@ -902,7 +906,8 @@ mod instructions {
 
     #[test]
     fn test_ldx_immediate_load_data() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA2, 0x05, 0x00]);
 
         assert_eq!(cpu.register_x, 0x05);
@@ -912,7 +917,8 @@ mod instructions {
 
     #[test]
     fn test_ldy_immediate_load_data() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA0, 0x05, 0x00]);
 
         assert_eq!(cpu.register_y, 0x05);
@@ -922,7 +928,8 @@ mod instructions {
 
     #[test]
     fn test_immediate_lda_zero_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0x00, 0x00]);
 
         assert!(cpu.status.contains(StatusFlag::Zero));
@@ -930,7 +937,8 @@ mod instructions {
 
     #[test]
     fn test_immediate_ldx_zero_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA2, 0x00, 0x00]);
 
         assert!(cpu.status.contains(StatusFlag::Zero));
@@ -938,7 +946,8 @@ mod instructions {
 
     #[test]
     fn test_immediate_ldy_zero_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA0, 0x00, 0x00]);
 
         assert!(cpu.status.contains(StatusFlag::Zero));
@@ -946,7 +955,8 @@ mod instructions {
 
     #[test]
     fn test_0xaa_tax_move_a_to_x() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.register_a = 10;
         cpu.load_and_run(vec![0xA9, 0x0A, 0xAA, 0x00]);
 
@@ -955,7 +965,8 @@ mod instructions {
 
     #[test]
     fn test_inx_overflow() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         // the following program adds 0xFF to the register A then
         // moves the contents of register A to register X and then
         // increments by 1 two times the register X (leading to an overflow).
@@ -967,7 +978,8 @@ mod instructions {
 
     #[test]
     fn test_iny_overflow() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         // the following program adds 0xFF to the register A then
         // moves the contents of register A to register Y and then
         // increments by 1 two times the register Y (leading to an overflow).
@@ -979,7 +991,8 @@ mod instructions {
 
     #[test]
     fn test_5_ops_working_together() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0xc0, 0xaa, 0xe8, 0x00]);
 
         assert_eq!(cpu.register_x, 0xc1)
@@ -987,7 +1000,8 @@ mod instructions {
 
     #[test]
     fn test_lda_from_memory() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
         cpu.load_and_run(vec![0xa5, 0x10, 0x00]);
@@ -997,7 +1011,8 @@ mod instructions {
 
     #[test]
     fn test_ldx_from_memory() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
         cpu.load_and_run(vec![0xA6, 0x10, 0x00]);
@@ -1007,7 +1022,8 @@ mod instructions {
 
     #[test]
     fn test_ldy_from_memory() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
         cpu.load_and_run(vec![0xA4, 0x10, 0x00]);
@@ -1017,7 +1033,8 @@ mod instructions {
 
     #[test]
     fn test_immediate_and_operation() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         // the program loads 0b0000_0011 into the register A then
         // perform an AND with 0b0000_1111.
         let program = vec![0xA9, 0b0000_0011, 0x29, 0b0000_1111, 0x00];
@@ -1028,7 +1045,8 @@ mod instructions {
 
     #[test]
     fn test_immediate_eor_operation() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         // the program loads 0b0000_0011 into the register A then
         // perform an Exclusive OR with 0b0000_1111.
         let program = vec![0xA9, 0b0000_0011, 0x49, 0b0000_1111, 0x00];
@@ -1039,7 +1057,8 @@ mod instructions {
 
     #[test]
     fn test_immediate_ora_operation() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         // the program loads 0b0000_0011 into the register A then
         // perform an OR with 0b0000_1111.
         let program = vec![0xA9, 0b0000_0011, 0x09, 0b0000_1111, 0x00];
@@ -1050,7 +1069,8 @@ mod instructions {
 
     #[test]
     fn test_clc_clears_carry_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let program = vec![0x38, 0x18, 0x00];
         cpu.load_and_run(program);
 
@@ -1059,7 +1079,8 @@ mod instructions {
 
     #[test]
     fn test_sec_sets_carry_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let program = vec![0x38, 0x00];
         cpu.load_and_run(program);
 
@@ -1068,7 +1089,8 @@ mod instructions {
 
     #[test]
     fn test_cli_clears_interrupt_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let program = vec![0x78, 0x58, 0x00];
         cpu.load_and_run(program);
 
@@ -1077,7 +1099,8 @@ mod instructions {
 
     #[test]
     fn test_sei_sets_interrupt_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let program = vec![0x78, 0x00];
         cpu.load_and_run(program);
 
@@ -1086,7 +1109,8 @@ mod instructions {
 
     #[test]
     fn test_cld_clears_decimal_mode_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let program = vec![0xF8, 0xD8, 0x00];
         cpu.load_and_run(program);
 
@@ -1095,7 +1119,8 @@ mod instructions {
 
     #[test]
     fn test_sed_sets_decimal_mode_flag() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let program = vec![0xF8, 0x00];
         cpu.load_and_run(program);
 
@@ -1104,7 +1129,8 @@ mod instructions {
 
     #[test]
     fn test_inc_can_increment_memory_by_1() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let addr = 0x10;
         let data = 0x01;
         cpu.mem_write(addr, data);
@@ -1119,7 +1145,8 @@ mod instructions {
 
     #[test]
     fn test_dec_can_decrement_memory_by_1() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let addr = 0x10;
         let data = 0x01;
         cpu.mem_write(addr, data);
@@ -1134,7 +1161,8 @@ mod instructions {
 
     #[test]
     fn test_sta_can_store_register_a() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let addr = 0x10;
         // This program loads a 7 into the register A.
         // Then stores the contents of A into the addr (0x10).
@@ -1146,7 +1174,8 @@ mod instructions {
 
     #[test]
     fn test_stx_can_store_register_x() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let addr = 0x10;
         // This program loads a 7 into the register X.
         // Then stores the contents of X into the addr (0x10).
@@ -1158,7 +1187,8 @@ mod instructions {
 
     #[test]
     fn test_sty_can_store_register_y() {
-        let mut cpu = CPU::new();
+        let bus = Bus::new();
+        let mut cpu = CPU::new(bus);
         let addr = 0x10;
         // This program loads a 7 into the register Y.
         // Then stores the contents of Y into the addr (0x10).

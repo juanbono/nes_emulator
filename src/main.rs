@@ -1,4 +1,5 @@
 pub mod cpu;
+use cpu::Bus;
 use cpu::CPU;
 use rand::Rng;
 use sdl2::event::Event;
@@ -119,7 +120,8 @@ fn main() {
     ];
 
     //load the game
-    let mut cpu = CPU::new();
+    let bus = Bus::new();
+    let mut cpu = CPU::new(bus);
     cpu.load(game_code);
     cpu.reset();
 
