@@ -1,12 +1,13 @@
 pub mod cpu;
-use cpu::Bus;
-use cpu::CPU;
+use cpu::{Bus, Rom, CPU};
 use rand::Rng;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::EventPump;
+
+const PATH_TO_ROM: &str = "";
 
 fn color(byte: u8) -> Color {
     match byte {
@@ -76,7 +77,7 @@ fn handle_user_input(cpu: &mut CPU, event_pump: &mut EventPump) {
     }
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     // init sdl2
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -120,7 +121,9 @@ fn main() {
     ];
 
     //load the game
-    let bus = Bus::new();
+    let rom_bytes = std::fs::read(PATH_TO_ROM)?;
+    let rom = Rom::new(&rom_bytes).unwrap();
+    let bus = Bus::new(rom);
     let mut cpu = CPU::new(bus);
     cpu.load(game_code);
     cpu.reset();
@@ -144,4 +147,6 @@ fn main() {
 
         ::std::thread::sleep(std::time::Duration::new(0, 70_000));
     });
+
+    Ok(())
 }

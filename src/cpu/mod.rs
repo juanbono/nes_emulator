@@ -1,10 +1,13 @@
+mod bus;
+mod cartridge;
 mod opcodes;
 mod status;
-mod bus;
+use crate::cpu::cartridge::test::test_rom;
 
+pub use bus::Bus;
+pub use cartridge::Rom;
 use flagset::FlagSet;
 use status::{Status, StatusFlag};
-pub use bus::Bus;
 use std::collections::HashMap;
 
 #[allow(non_camel_case_types)]
@@ -884,7 +887,7 @@ impl Default for CPU {
             status: Status::from(0b100100),
             program_counter: 0,
             stack_pointer: STACK_RESET,
-            bus: Bus::new(),
+            bus: Bus::new(test_rom()),
         }
     }
 }
@@ -892,10 +895,11 @@ impl Default for CPU {
 #[cfg(test)]
 mod instructions {
     use super::*;
+    use crate::cpu::cartridge::test::test_rom;
 
     #[test]
     fn test_0xa9_lda_immediate_load_data() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0x05, 0x00]);
 
@@ -906,7 +910,7 @@ mod instructions {
 
     #[test]
     fn test_ldx_immediate_load_data() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA2, 0x05, 0x00]);
 
@@ -917,7 +921,7 @@ mod instructions {
 
     #[test]
     fn test_ldy_immediate_load_data() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA0, 0x05, 0x00]);
 
@@ -928,7 +932,7 @@ mod instructions {
 
     #[test]
     fn test_immediate_lda_zero_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0x00, 0x00]);
 
@@ -937,7 +941,7 @@ mod instructions {
 
     #[test]
     fn test_immediate_ldx_zero_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA2, 0x00, 0x00]);
 
@@ -946,7 +950,7 @@ mod instructions {
 
     #[test]
     fn test_immediate_ldy_zero_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xA0, 0x00, 0x00]);
 
@@ -955,7 +959,7 @@ mod instructions {
 
     #[test]
     fn test_0xaa_tax_move_a_to_x() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.register_a = 10;
         cpu.load_and_run(vec![0xA9, 0x0A, 0xAA, 0x00]);
@@ -965,7 +969,7 @@ mod instructions {
 
     #[test]
     fn test_inx_overflow() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         // the following program adds 0xFF to the register A then
         // moves the contents of register A to register X and then
@@ -978,7 +982,7 @@ mod instructions {
 
     #[test]
     fn test_iny_overflow() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         // the following program adds 0xFF to the register A then
         // moves the contents of register A to register Y and then
@@ -991,7 +995,7 @@ mod instructions {
 
     #[test]
     fn test_5_ops_working_together() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0xc0, 0xaa, 0xe8, 0x00]);
 
@@ -1000,7 +1004,7 @@ mod instructions {
 
     #[test]
     fn test_lda_from_memory() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
@@ -1011,7 +1015,7 @@ mod instructions {
 
     #[test]
     fn test_ldx_from_memory() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
@@ -1022,7 +1026,7 @@ mod instructions {
 
     #[test]
     fn test_ldy_from_memory() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
@@ -1033,7 +1037,7 @@ mod instructions {
 
     #[test]
     fn test_immediate_and_operation() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         // the program loads 0b0000_0011 into the register A then
         // perform an AND with 0b0000_1111.
@@ -1045,7 +1049,7 @@ mod instructions {
 
     #[test]
     fn test_immediate_eor_operation() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         // the program loads 0b0000_0011 into the register A then
         // perform an Exclusive OR with 0b0000_1111.
@@ -1057,7 +1061,7 @@ mod instructions {
 
     #[test]
     fn test_immediate_ora_operation() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         // the program loads 0b0000_0011 into the register A then
         // perform an OR with 0b0000_1111.
@@ -1069,7 +1073,7 @@ mod instructions {
 
     #[test]
     fn test_clc_clears_carry_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let program = vec![0x38, 0x18, 0x00];
         cpu.load_and_run(program);
@@ -1079,7 +1083,7 @@ mod instructions {
 
     #[test]
     fn test_sec_sets_carry_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let program = vec![0x38, 0x00];
         cpu.load_and_run(program);
@@ -1089,7 +1093,7 @@ mod instructions {
 
     #[test]
     fn test_cli_clears_interrupt_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let program = vec![0x78, 0x58, 0x00];
         cpu.load_and_run(program);
@@ -1099,7 +1103,7 @@ mod instructions {
 
     #[test]
     fn test_sei_sets_interrupt_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let program = vec![0x78, 0x00];
         cpu.load_and_run(program);
@@ -1109,7 +1113,7 @@ mod instructions {
 
     #[test]
     fn test_cld_clears_decimal_mode_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let program = vec![0xF8, 0xD8, 0x00];
         cpu.load_and_run(program);
@@ -1119,7 +1123,7 @@ mod instructions {
 
     #[test]
     fn test_sed_sets_decimal_mode_flag() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let program = vec![0xF8, 0x00];
         cpu.load_and_run(program);
@@ -1129,7 +1133,7 @@ mod instructions {
 
     #[test]
     fn test_inc_can_increment_memory_by_1() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let addr = 0x10;
         let data = 0x01;
@@ -1145,7 +1149,7 @@ mod instructions {
 
     #[test]
     fn test_dec_can_decrement_memory_by_1() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let addr = 0x10;
         let data = 0x01;
@@ -1161,7 +1165,7 @@ mod instructions {
 
     #[test]
     fn test_sta_can_store_register_a() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let addr = 0x10;
         // This program loads a 7 into the register A.
@@ -1174,7 +1178,7 @@ mod instructions {
 
     #[test]
     fn test_stx_can_store_register_x() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let addr = 0x10;
         // This program loads a 7 into the register X.
@@ -1187,7 +1191,7 @@ mod instructions {
 
     #[test]
     fn test_sty_can_store_register_y() {
-        let bus = Bus::new();
+        let bus = Bus::new(test_rom());
         let mut cpu = CPU::new(bus);
         let addr = 0x10;
         // This program loads a 7 into the register Y.
