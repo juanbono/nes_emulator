@@ -22,11 +22,11 @@ impl Bus {
     pub fn mem_read(&self, addr: u16) -> u8 {
         match addr {
             RAM..=RAM_MIRRORS_END => {
-                let mirror_down_addr = addr & 0b00000111_11111111;
+                let mirror_down_addr = addr & 0b0000_0111_1111_1111;
                 self.cpu_vram[mirror_down_addr as usize]
             }
             PPU_REGISTERS..=PPU_REGISTERS_MIRRORS_END => {
-                let _mirror_down_addr = addr & 0b00100000_00000111;
+                let _mirror_down_addr = addr & 0b0010_0000_0000_0111;
                 todo!("PPU is not supported yet.")
             }
             0x8000..=0xFFFF => self.read_prg_rom(addr),
@@ -40,11 +40,11 @@ impl Bus {
     pub fn mem_write(&mut self, addr: u16, data: u8) {
         match addr {
             RAM..=RAM_MIRRORS_END => {
-                let mirror_down_addr = addr & 0b11111111111;
+                let mirror_down_addr = addr & 0b111_1111_1111;
                 self.cpu_vram[mirror_down_addr as usize] = data;
             }
             PPU_REGISTERS..=PPU_REGISTERS_MIRRORS_END => {
-                let _mirror_down_addr = addr & 0b00100000_00000111;
+                let _mirror_down_addr = addr & 0b0010_0000_0000_0111;
                 todo!("PPU is not supported yet");
             }
             0x8000..=0xFFFF => {
@@ -73,7 +73,7 @@ impl Bus {
         addr -= 0x8000;
         if self.rom.prg_rom.len() == 0x4000 && addr >= 0x4000 {
             // mirror if needed
-            addr = addr % 0x4000;
+            addr %= 0x4000;
         }
         self.rom.prg_rom[addr as usize]
     }

@@ -18,8 +18,8 @@ pub struct Rom {
 }
 
 impl Rom {
-    pub fn new(raw: &Vec<u8>) -> Result<Rom, String> {
-        if &raw[0..4] != NES_TAG {
+    pub fn new(raw: &[u8]) -> Result<Rom, String> {
+        if raw[0..4] != NES_TAG {
             return Err("File is not in iNES file format".to_string());
         }
 
@@ -92,7 +92,7 @@ pub mod test {
             ],
             trainer: None,
             pgp_rom: vec![1; 2 * PRG_ROM_PAGE_SIZE],
-            chr_rom: vec![2; 1 * CHR_ROM_PAGE_SIZE],
+            chr_rom: vec![2; CHR_ROM_PAGE_SIZE],
         });
 
         Rom::new(&test_rom).unwrap()

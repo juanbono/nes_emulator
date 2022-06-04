@@ -366,9 +366,9 @@ impl CPU {
         self.bus.mem_read_u16(pos)
     }
 
-    fn mem_write_u16(&mut self, pos: u16, data: u16) {
-        self.bus.mem_write_u16(pos, data)
-    }
+    // fn mem_write_u16(&mut self, pos: u16, data: u16) {
+    //     self.bus.mem_write_u16(pos, data)
+    // }
 
     /// Restores the state of all registers and initialize program_counter by
     /// the 2-byte value stored at 0xFFFC
@@ -387,7 +387,7 @@ impl CPU {
         for i in 0..(program.len() as u16) {
             self.mem_write(0x0600 + i, program[i as usize]);
         }
-        self.mem_write_u16(0xFFFC, 0x0600);
+        // self.mem_write_u16(0xFFFC, 0x0600);
     }
 
     ////////////////
